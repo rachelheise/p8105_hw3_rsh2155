@@ -1,0 +1,62 @@
+---
+title: "P8105 Homework 3"
+author: "Rachel Heise"
+date: "10/4/2020"
+output: github_document
+---
+
+## Problem 1
+
+```{r setup, include=FALSE}
+library(p8105.datasets)
+library(tidyverse)
+library(dplyr)
+
+data(instacart)
+head(instacart)
+```
+
+This data has `r nrow(instacart)` observations and `r ncol(instacart)` columns. The data is organized where each row is an item from one order, and the data set contains info on the item name and department and aisle where it can be found. It also contains information on whether that item was reordered, and information on that order (order number and time of order).
+
+```{r}
+num_aisles = nrow(
+  instacart %>% 
+  group_by(aisle) %>% 
+  summarize(count = n())
+)
+```
+
+
+
+```{r}
+instacart %>% 
+  group_by(aisle) %>%
+  summarize(n_obs = n()) %>% 
+  filter(n_obs > 10000) %>% 
+  ggplot(aes(x = aisle)) +
+  geom_bar()
+```
+
+
+## Problem 2
+
+
+```{r}
+accel_df = 
+  read_csv("./data/accel_data.csv") %>% 
+  janitor::clean_names() %>% 
+  pivot_longer(
+    activity_1:activity_1440,
+    names_to = "activity_period",
+    values_to = "activity_count"
+    ) %>% 
+  mutate(weekday_weekend = recode(day, "Monday" = "weekday","Tuesday" = "weekday", "Wednesday" = "weekday", "Thursday" = "weekday", "Friday" = "weekday", "Saturday" = "weekend", "Sunday" = "weekend"))
+```
+
+
+
+
+
+
+
+
