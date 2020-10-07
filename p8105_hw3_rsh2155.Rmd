@@ -12,29 +12,86 @@ library(p8105.datasets)
 library(tidyverse)
 library(dplyr)
 
-data(instacart)
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = 0.6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.color = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_color_discrete = scale_color_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+
+```
+
+```{r}
+data("instacart")
 head(instacart)
 ```
 
+
 This data has `r nrow(instacart)` observations and `r ncol(instacart)` columns. The data is organized where each row is an item from one order, and the data set contains info on the item name and department and aisle where it can be found. It also contains information on whether that item was reordered, and information on that order (order number and time of order).
 
+User/order variables -- user ID, order ID, order day, order hour.
+Item variables -- name, aisle, department, and some numeric codes.
+
+Aisles are contained in departments
+
+
+Analyze number of aisles and which has the most items ordered from
 ```{r}
-num_aisles = nrow(
-  instacart %>% 
-  group_by(aisle) %>% 
-  summarize(count = n())
-)
+instacart %>% 
+  count(aisle) %>% 
+  arrange(desc(n))
+```
+There are 134 aisles, and the most ordered items are from fresh vegetables, fresh fruits, and packaged vegetables fruits.
+
+Plot items ordered in each aisle, but only those with greater than 10,000 items ordered
+```{r}
+instacart %>% 
+  count(aisle) %>% 
+  filter(n > 10000) %>% 
+  mutate(
+    aisle = factor(aisle),
+    aisle = fct_reorder(aisle, n)
+  ) %>% 
+  ggplot(aes(x = aisle, y = n)) +
+  geom_point() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 ```
 
 
+Make a table of most popular items in three aisles:
+```{r}
+instacart %>% 
+  filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%
+  group_by(aisle) %>% 
+  count(product_name) %>% 
+  mutate(rank = min_rank(desc(n))) %>% 
+  filter(rank < 4) %>% 
+  arrange(aisle, rank) %>% 
+  knitr::kable()
+```
+
+Mean time of day for Apples and Ice cream
 
 ```{r}
 instacart %>% 
-  group_by(aisle) %>%
-  summarize(n_obs = n()) %>% 
-  filter(n_obs > 10000) %>% 
-  ggplot(aes(x = aisle)) +
-  geom_bar()
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
+  group_by(product_name, order_dow) %>% 
+  summarize(mean_hour = mean(order_hour_of_day)) %>% 
+  pivot_wider(
+    names_from = order_dow,
+    values_from = mean_hour
+  ) %>% 
+    knitr::kable()
+
 ```
 
 
@@ -47,13 +104,60 @@ accel_df =
   janitor::clean_names() %>% 
   pivot_longer(
     activity_1:activity_1440,
-    names_to = "activity_period",
+    names_to = "activity_minute",
     values_to = "activity_count"
     ) %>% 
-  mutate(weekday_weekend = recode(day, "Monday" = "weekday","Tuesday" = "weekday", "Wednesday" = "weekday", "Thursday" = "weekday", "Friday" = "weekday", "Saturday" = "weekend", "Sunday" = "weekend"))
+  mutate(activity_minute = substr(activity_minute, 10, 12)) %>% 
+  mutate(weekday_weekend = recode(day, "Monday" = "weekday", "Tuesday" = "weekday", "Wednesday" = "weekday", "Thursday" = "weekday", "Friday" = "weekday", "Saturday" = "weekend", "Sunday" = "weekend"))
+```
+
+There are `r ncol(accel_df)` variables in this data set, and `r nrow(accel_df)` observations. Data of interest includes the activity period and activity count, which are respectively the minute of the day the measurement was taken, and the amount of activity that the man did during that minute. The week and day of the five week sample are included, as well as what day of the week each measurement was taken during. This is additionally broken into weekday and weekend categories.
+
+
+-Recode variables (factor, etc) make sure minute of the day is numeric
+-Order variables reasonably
+
+might have to use factors to order day of the week properly
+Total activity variable for each day
+Aggregate using sum
+```{r}
+accel_df %>% 
+  group_by(day_id) %>% 
+  summarize(daily_activity = sum(activity_count)) %>% 
+  knitr::kable()
+```
+
+Single panel plot
+Show activity - minute on x, activity count on y
+Geom_line maybe
+Color of day of week (aes mapping)
+```{r}
+accel_df %>% 
+  ggplot(aes(x = activity_minute, y = activity_count, color = day)) +
+  geom_line()
 ```
 
 
+
+
+
+## Problem 3
+
+```{r}
+data("ny_noaa")
+```
+
+convert tenths of a degree C to degrees C
+snowfall commonly observed - count!
+2 panel plot: data manipulation steps, then plotting step. group_by(station, year, month) and summarize(average max temp), filter for jan and july. Separate line for each station. Use faceting for two panel plot.
+
+Comment on global warming, are some stations always colder?
+
+Next 2 panel plot: pair two fundamentally dif plots together (patchwork). 
+
+Tmax vs tmin (contour plot, bin plot, or hex plot)
+
+distr of snowfall values: boxplots, violin plots, ridge plots
 
 
 
