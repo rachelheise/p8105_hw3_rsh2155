@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
   out.width = "90%"
 )
 
-theme_set(theme_minimal() + theme(legend.position = "bottom"))
+theme_set(theme_minimal() + theme(legend.position = "right"))
 
 options(
   ggplot2.continuous.color = "viridis",
@@ -143,8 +143,13 @@ accel_df %>%
   ) +
   geom_smooth(se = FALSE) +
   viridis::scale_color_viridis(
-    name = "Location",
-    discrete = TRUE)
+    name = "Day",
+    discrete = TRUE) +
+  labs(
+    title = "Daily Activity Plot",
+    x = "Time of Day",
+    y = "Activity Level"
+    )
 
 ```
 
@@ -156,9 +161,38 @@ From the above plot, we can see that starting at around midnight every day, on a
 
 ```{r}
 data("ny_noaa")
+
+ny_df = ny_noaa %>% 
+  mutate(
+    tmin = as.numeric(tmin), tmax = as.numeric(tmax)) %>% 
+  mutate(
+    tmin = tmin / 10,
+    tmax = tmax / 10)
+  
+
+ny_df %>% 
+  count(id)
 ```
 
-convert tenths of a degree C to degrees C
+This data set contains data, for each day and New York state weather station, on daily precipitation, max and min temperatures, and snow depth. There are `r nrow(ny_df)` observations and `r ncol(ny_df)` variables. Tmin and tmax are the minimum and maximum daily temperatures, respectively, in degrees C. Id provides the weather station ID for each station. Precipitation data is given in tenths of a mm, as well as daily snowfall (mm) and snow depth (mm). Missing data is a major concern with this data set; many of the rows of data only contain data on one of the precipitation and temperature variables.
+
+
+Further data cleaning:
+
+```{r}
+ny_df = ny_df %>% 
+  separate(date, into = c("year", "month", "day"), sep = "[-]", convert = TRUE)
+
+ny_df %>% 
+  count(snow) %>% 
+  arrange(desc(n))
+
+
+```
+
+The most commonly observed amounts of snowfall are 0 and NA. 0 is quite likely because during the summer and warmer parts of the spring and fall in NY state, there will mostly be no snow. 
+
+
 snowfall commonly observed - count!
 2 panel plot: data manipulation steps, then plotting step. group_by(station, year, month) and summarize(average max temp), filter for jan and july. Separate line for each station. Use faceting for two panel plot.
 
