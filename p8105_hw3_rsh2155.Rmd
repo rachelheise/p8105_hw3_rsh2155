@@ -11,6 +11,7 @@ output: github_document
 library(p8105.datasets)
 library(tidyverse)
 library(dplyr)
+library(patchwork)
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -30,29 +31,24 @@ scale_fill_discrete = scale_fill_viridis_d
 
 ```
 
-```{r}
+```{r, results = "hide"}
 data("instacart")
 head(instacart)
 ```
 
 
-This data has `r nrow(instacart)` observations and `r ncol(instacart)` columns. The data is organized where each row is an item from one order, and the data set contains info on the item name and department and aisle where it can be found. It also contains information on whether that item was reordered, and information on that order (order number and time of order).
+This data has `r nrow(instacart)` observations and `r ncol(instacart)` columns. The data contains both user/order variables and item variables. Variables relating to the user and order are the user ID, order ID, order day, order hour, and days since prior order. Item variables include product ID, reordered (whether or not the user had ordered this previously), product name, aisle, and department. There are multiple aisles contained within departments.
 
-User/order variables -- user ID, order ID, order day, order hour.
-Item variables -- name, aisle, department, and some numeric codes.
-
-Aisles are contained in departments
-
-
-Analyze number of aisles and which has the most items ordered from
+Analyze number of aisles and which has the most items ordered from.
 ```{r}
 instacart %>% 
   count(aisle) %>% 
   arrange(desc(n))
 ```
+
 There are 134 aisles, and the most ordered items are from fresh vegetables, fresh fruits, and packaged vegetables fruits.
 
-Plot items ordered in each aisle, but only those with greater than 10,000 items ordered
+Plot items ordered in each aisle, but only those with greater than 10,000 items ordered.
 ```{r}
 instacart %>% 
   count(aisle) %>% 
@@ -63,11 +59,16 @@ instacart %>%
   ) %>% 
   ggplot(aes(x = aisle, y = n)) +
   geom_point() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  labs(
+    title = "Items Ordered per Aisle",
+    x = "Aisle",
+    y = "Number of Items"
+    )
 ```
 
 
-Make a table of most popular items in three aisles:
+Make a table of the most popular items in three aisles.
 ```{r}
 instacart %>% 
   filter(aisle %in% c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>%
@@ -79,8 +80,7 @@ instacart %>%
   knitr::kable()
 ```
 
-Mean time of day for Apples and Ice cream
-
+Table of mean time of day that Pink Lady Apples and Coffee Ice Cream are ordered.
 ```{r}
 instacart %>% 
   filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
@@ -97,8 +97,8 @@ instacart %>%
 
 ## Problem 2
 
-
-```{r}
+Import and clean accelerometer data.
+```{r, results = "hide"}
 accel_df = 
   read_csv("./data/accel_data.csv") %>% 
   janitor::clean_names() %>% 
@@ -112,15 +112,9 @@ accel_df =
   mutate(weekday_weekend = recode(day, "Monday" = "weekday", "Tuesday" = "weekday", "Wednesday" = "weekday", "Thursday" = "weekday", "Friday" = "weekday", "Saturday" = "weekend", "Sunday" = "weekend"))
 ```
 
-There are `r ncol(accel_df)` variables in this data set, and `r nrow(accel_df)` observations. Data of interest includes the activity period and activity count, which are respectively the minute of the day the measurement was taken, and the amount of activity that the man did during that minute. The week and day of the five week sample are included, as well as what day of the week each measurement was taken during. This is additionally broken into weekday and weekend categories.
+There are `r ncol(accel_df)` variables in this data set, and `r nrow(accel_df)` observations. Data of interest includes the activity period and activity count, which are respectively the minute of the day the measurement was taken and the amount of activity that the man did during that minute. The week and day of the five week sample are included, as well as what day of the week each measurement was taken during. This is additionally broken into weekday and weekend categories.
 
 
--Recode variables (factor, etc) make sure minute of the day is numeric
--Order variables reasonably
-
-might have to use factors to order day of the week properly
-Total activity variable for each day
-Aggregate using sum
 ```{r}
 accel_df %>% 
   group_by(day_id) %>% 
@@ -128,11 +122,10 @@ accel_df %>%
   knitr::kable()
 ```
 
-Single panel plot
-Show activity - minute on x, activity count on y
-Geom_line maybe
-Color of day of week (aes mapping)
-```{r}
+From the above table, it appears there were two days where this man did not wear the accelerometer because the activity count is at the baseline (day 24 and day 31). It does not appear that his activity levels are trending over time, but there are a few days in these five weeks where he had quite high activity levels, greater than 600,000 per day, and some low days, under 100,000 per day.
+
+Create a single-panel plot showing 24 hour activity levels.
+```{r, warning = FALSE}
 accel_df %>%
   group_by(day, activity_minute) %>% 
   summarize(mean_activities = mean(activity_count)) %>% 
@@ -140,6 +133,8 @@ accel_df %>%
   scale_x_continuous(
     breaks = c(1, 360, 720, 1080, 1440),
     labels = c("12am", "6am", "12pm", "6pm", "12pm")
+  ) +
+  scale_y_continuous(limit = c(0, 750)
   ) +
   geom_smooth(se = FALSE) +
   viridis::scale_color_viridis(
@@ -149,11 +144,11 @@ accel_df %>%
     title = "Daily Activity Plot",
     x = "Time of Day",
     y = "Activity Level"
-    )
+  )
 
 ```
 
-From the above plot, we can see that starting at around midnight every day, on average the individual was moving hardly at all which is to be expected because he is likely asleep. Some noteworthy spikes on the plot are on Sundays, activity was quite high between 9 am and noon, and on Fridays, activity was even higher between 8 pm and 10 pm. In general, all days have steadily increasing activity from 6 am to 10 am, at which point activity stabilizes before reducing around 9 pm.
+From the above plot, we can see that starting at around midnight every day, on average the individual was moving hardly at all which is to be expected because he is likely asleep. Some noteworthy spikes on the plot are on Sundays, where activity was quite high between 9 am and noon, and on Fridays, activity was high between 8 pm and 10 pm. On average, the lowest activity day of the week was Saturday. In general, all days have steadily increasing activity from 6 am to 10 am, at which point activity stabilizes before reducing around 9 pm.
 
 
 
@@ -168,32 +163,26 @@ ny_df = ny_noaa %>%
   mutate(
     tmin = tmin / 10,
     tmax = tmax / 10)
-  
-
-ny_df %>% 
-  count(id)
 ```
 
-This data set contains data, for each day and New York state weather station, on daily precipitation, max and min temperatures, and snow depth. There are `r nrow(ny_df)` observations and `r ncol(ny_df)` variables. Tmin and tmax are the minimum and maximum daily temperatures, respectively, in degrees C. Id provides the weather station ID for each station. Precipitation data is given in tenths of a mm, as well as daily snowfall (mm) and snow depth (mm). Missing data is a major concern with this data set; many of the rows of data only contain data on one of the precipitation and temperature variables.
+This data set contains data, for each day and New York state weather station, on daily precipitation, max and min temperatures, and snow depth. There are `r nrow(ny_df)` observations and `r ncol(ny_df)` variables. Tmin and tmax are the minimum and maximum daily temperatures, respectively, in degrees C. ID provides the weather station ID for each station. Precipitation data is given in tenths of a mm, as well as daily snowfall (mm) and snow depth (mm). Missing data is a major concern with this data set; many of the rows of data only contain information on one of the precipitation and temperature variables.
 
 
-Further data cleaning:
-
+Perform further data cleaning:
 ```{r}
 ny_df = ny_df %>% 
-  separate(date, into = c("year", "month", "day"), sep = "[-]", convert = TRUE)
+  separate(date, into = c("year", "month", "day"), sep = "[-]", convert = TRUE) %>% 
+  mutate(snow = as.double(snow))
+
 
 ny_df %>% 
   count(snow) %>% 
   arrange(desc(n))
-
-
 ```
 
 The most commonly observed amounts of snowfall are 0 and NA. 0 is quite likely because during the summer and warmer parts of the spring and fall in NY state, there will mostly be no snow. 
 
-
-
+Create a two-panel plot of average max temperature for January and July.
 ```{r, warning = FALSE}
 month_names = c(`1` = "January", `7` = "July")
 
@@ -212,25 +201,52 @@ ny_df %>%
     title = "January and July Temperatures",
     x = "Year",
     y = "Mean Tmax"
+  ) +
+  viridis::scale_color_viridis(
+    discrete = TRUE) +
+  scale_x_continuous(
+    breaks = c(1980, 1990, 2000, 2010),
+    labels = c("1980", "1990", "2000", "2010")
   )
   
   
 ```
 
+The above plot shows the mean temperatures at each station for the months of January and July, from 1980 to 2010. As expected, July temperatures are much warmer than January temperatures for all stations in New York. The January temperatures seem to have warmed over time, and there is also greater spread of temperatures in the 2000s than in the 1980s and 1990s. July temperatures look more stable over time. There are outliers on both plots, and one point in January of 1982 particularly stands out, as well as a point in July of 1988. Although there is variation between stations in each year, across years they tend to follow similar patterns: when one station has a warm month, most other stations also have a warm month.
+
+Create two-panel plot of min vs. max temperatures and snowfall distributions.
+```{r, warning = FALSE}
+
+tmax_tmin = ny_df %>% 
+  ggplot(aes(x = tmax, y = tmin)) +
+  geom_hex() +
+  labs(
+    title = "Max and Min Temperatures",
+    x = "Tmax",
+    y = "Tmin"
+  ) +
+  viridis::scale_color_viridis(
+    discrete = TRUE) +
+  knitr::opts_chunk$set(fig.width = 15, fig.height = 12)
 
 
+  
+snowfall = ny_df %>% 
+  filter(snow > 0, snow < 100) %>% 
+  mutate(year = as.factor(year)) %>% 
+  ggplot(aes(x = snow, y = year)) +
+  geom_boxplot(alpha = 0.5) +
+  labs(
+    title = "Snowfall Distribution",
+    x = "Year",
+    y = "Snowfall"
+  ) +
+  viridis::scale_color_viridis(
+    discrete = TRUE) +
+  knitr::opts_chunk$set(fig.width = 15, fig.height = 12)
 
+tmax_tmin / snowfall
 
-Comment on global warming, are some stations always colder?
-
-Next 2 panel plot: pair two fundamentally dif plots together (patchwork). 
-
-Tmax vs tmin (contour plot, bin plot, or hex plot)
-
-distr of snowfall values: boxplots, violin plots, ridge plots
-
-
-
-
+```
 
 
