@@ -14,7 +14,7 @@ library(dplyr)
 library(patchwork)
 
 knitr::opts_chunk$set(
-  fig.width = 6,
+  fig.width = 8,
   fig.asp = 0.6,
   out.width = "90%"
 )
@@ -117,8 +117,12 @@ There are `r ncol(accel_df)` variables in this data set, and `r nrow(accel_df)` 
 
 ```{r}
 accel_df %>% 
-  group_by(day_id) %>% 
-  summarize(daily_activity = sum(activity_count)) %>% 
+  group_by(day, week) %>% 
+  summarize(daily_activity = sum(activity_count)) %>%
+  pivot_wider(
+    names_from = day,
+    values_from = daily_activity) %>% 
+  relocate(week, Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday) %>% 
   knitr::kable()
 ```
 
@@ -222,19 +226,17 @@ tmax_tmin = ny_df %>%
   geom_hex() +
   labs(
     title = "Max and Min Temperatures",
-    x = "Tmax",
-    y = "Tmin"
+    x = "Max Temperature (deg C)",
+    y = "Min Temperature (deg C)"
   ) +
   viridis::scale_color_viridis(
-    discrete = TRUE) +
-  knitr::opts_chunk$set(fig.width = 15, fig.height = 12)
+    discrete = TRUE)
 
 
-  
 snowfall = ny_df %>% 
   filter(snow > 0, snow < 100) %>% 
-  mutate(year = as.factor(year)) %>% 
-  ggplot(aes(x = snow, y = year)) +
+  mutate(year = factor(year)) %>% 
+  ggplot(aes(x = year, y = snow)) +
   geom_boxplot(alpha = 0.5) +
   labs(
     title = "Snowfall Distribution",
@@ -243,10 +245,9 @@ snowfall = ny_df %>%
   ) +
   viridis::scale_color_viridis(
     discrete = TRUE) +
-  knitr::opts_chunk$set(fig.width = 15, fig.height = 12)
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 tmax_tmin / snowfall
-
 ```
 
 
