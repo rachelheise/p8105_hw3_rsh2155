@@ -1,7 +1,7 @@
 ---
 title: "P8105 Homework 3"
 author: "Rachel Heise"
-date: "10/4/2020"
+date: "10/9/2020"
 output: github_document
 ---
 
@@ -81,7 +81,7 @@ instacart %>%
 ```
 
 Table of mean time of day that Pink Lady Apples and Coffee Ice Cream are ordered.
-```{r}
+```{r, message = FALSE}
 instacart %>% 
   filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
   group_by(product_name, order_dow) %>% 
@@ -90,7 +90,7 @@ instacart %>%
     names_from = order_dow,
     values_from = mean_hour
   ) %>% 
-    knitr::kable()
+  knitr::kable()
 
 ```
 
@@ -98,7 +98,7 @@ instacart %>%
 ## Problem 2
 
 Import and clean accelerometer data.
-```{r, results = "hide"}
+```{r, results = "hide", message = FALSE}
 accel_df = 
   read_csv("./data/accel_data.csv") %>% 
   janitor::clean_names() %>% 
@@ -115,7 +115,7 @@ accel_df =
 There are `r ncol(accel_df)` variables in this data set, and `r nrow(accel_df)` observations. Data of interest includes the activity period and activity count, which are respectively the minute of the day the measurement was taken and the amount of activity that the man did during that minute. The week and day of the five week sample are included, as well as what day of the week each measurement was taken during. This is additionally broken into weekday and weekend categories.
 
 
-```{r}
+```{r, message = FALSE}
 accel_df %>% 
   group_by(day, week) %>% 
   summarize(daily_activity = sum(activity_count)) %>%
@@ -126,10 +126,10 @@ accel_df %>%
   knitr::kable()
 ```
 
-From the above table, it appears there were two days where this man did not wear the accelerometer because the activity count is at the baseline (day 24 and day 31). It does not appear that his activity levels are trending over time, but there are a few days in these five weeks where he had quite high activity levels, greater than 600,000 per day, and some low days, under 100,000 per day.
+From the above table, it appears there were two days where this man did not wear the accelerometer because the activity count is at the baseline (day 24 and day 31). It does not appear that his activity levels are trending over time, but there are a few days in these five weeks where he had quite high activity levels, greater than 600,000 per day, and a low day, under 100,000 per day.
 
 Create a single-panel plot showing 24 hour activity levels.
-```{r, warning = FALSE}
+```{r, messsage = FALSE, warning = FALSE}
 accel_df %>%
   group_by(day, activity_minute) %>% 
   summarize(mean_activities = mean(activity_count)) %>% 
@@ -152,7 +152,7 @@ accel_df %>%
 
 ```
 
-From the above plot, we can see that starting at around midnight every day, on average the individual was moving hardly at all which is to be expected because he is likely asleep. Some noteworthy spikes on the plot are on Sundays, where activity was quite high between 9 am and noon, and on Fridays, activity was high between 8 pm and 10 pm. On average, the lowest activity day of the week was Saturday. In general, all days have steadily increasing activity from 6 am to 10 am, at which point activity stabilizes before reducing around 9 pm.
+From the above plot, we can see that starting at around midnight every day, on average the individual was moving hardly at all which is to be expected because he is likely asleep. Some noteworthy spikes on the plot are on Sundays, where activity was quite high between 9 am and noon, and on Fridays, activity was high between 8 pm and 10 pm. On average, the lowest activity day of the week was Saturday; however, we saw above that there were two Saturdays he did not wear the accelerometer. In general, all days have steadily increasing activity from 6 am to 10 am, at which point activity stabilizes before reducing around 9 pm.
 
 
 
@@ -176,8 +176,9 @@ Perform further data cleaning:
 ```{r}
 ny_df = ny_df %>% 
   separate(date, into = c("year", "month", "day"), sep = "[-]", convert = TRUE) %>% 
-  mutate(snow = as.double(snow))
-
+  mutate(snow = as.double(snow),
+         prcp = as.numeric(tmin)) %>% 
+  mutate(prcp = prcp / 10)
 
 ny_df %>% 
   count(snow) %>% 
@@ -187,7 +188,7 @@ ny_df %>%
 The most commonly observed amounts of snowfall are 0 and NA. 0 is quite likely because during the summer and warmer parts of the spring and fall in NY state, there will mostly be no snow. 
 
 Create a two-panel plot of average max temperature for January and July.
-```{r, warning = FALSE}
+```{r, warning = FALSE, message = FALSE}
 month_names = c(`1` = "January", `7` = "July")
 
 
@@ -204,7 +205,7 @@ ny_df %>%
   labs(
     title = "January and July Temperatures",
     x = "Year",
-    y = "Mean Tmax"
+    y = "Mean Temperature Max (deg C)"
   ) +
   viridis::scale_color_viridis(
     discrete = TRUE) +
